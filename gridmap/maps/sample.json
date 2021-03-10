@@ -1,0 +1,27 @@
+{
+    "cols": 11, 
+    "endingBlockIdx": [ 8, 8 ], 
+    "endingPoint": [ 8.5, 8.5 ], 
+    "haveEndingBlock": true, 
+    "haveStartingBlock": true, 
+    "name": "S0202_E0808", 
+    "obstacleIndices": [
+        [ 5, 2 ], 
+        [ 5, 3 ], 
+        [ 5, 4 ], 
+        [ 5, 5 ], 
+        [ 5, 6 ], 
+        [ 5, 7 ], 
+        [ 5, 8 ]
+    ], 
+    "origin": [ 0, 0 ], 
+    "outOfBoundValue": -10, 
+    "rows": 11, 
+    "startingBlockIdx": [ 2, 2 ], 
+    "startingPoint": [ 2.5, 2.5 ], 
+    "stepSize": [ 1, 1 ], 
+    "valueEndingBlock": 100, 
+    "valueNormalBlock": -0.1, 
+    "valueObstacleBlock": -10, 
+    "valueStartingBlock": -0.1
+}
