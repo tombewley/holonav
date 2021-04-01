@@ -63,7 +63,7 @@ class HoloNav(gym.Env):
         xy_new = np.clip(xy + action*self.map["max_speed"], [0,0], self.map["shape"])
         # If intersect a wall, reset position and get reward and continuation prob.
         rewards, p_c = {}, 1
-        if "walls" in self.map:
+        if not np.all(np.isclose(xy, xy_new)) and "walls" in self.map:
             for n, w in self.map["walls"].items():
                 if do_intersect(xy, xy_new, w["coords"][0], w["coords"][1]):
                     if "reward" in w: rewards[n] = w["reward"]
