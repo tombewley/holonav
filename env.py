@@ -36,10 +36,16 @@ class HoloNav(gym.Env):
         self.obs = None
 
     def reset(self): 
-        # Choose a box to initialise in and sample a random uniform location inside.
-        init_box  = np.random.choice(list(self.map["boxes"].keys()), p=self._init_box_probs)
-        xb, yb = zip(*self.map["boxes"][init_box]["coords"])
-        self.obs = [np.random.uniform(*xb), np.random.uniform(*yb)]
+        ok = False
+        while not ok:
+            # Choose a box to initialise in and sample a random uniform location inside.
+            init_box  = np.random.choice(list(self.map["boxes"].keys()), p=self._init_box_probs)
+            xb, yb = zip(*self.map["boxes"][init_box]["coords"])
+            self.obs, ok = [np.random.uniform(*xb), np.random.uniform(*yb)], True
+            # Allow boxes with init_weight = 0 to block this location.
+            if "boxes" in self.map:
+                for b in self.map["boxes"].values():
+                    if "init_weight" in b and b["init_weight"] == 0 and pt_in_box(self.obs, b["coords"]): ok = False; break
         # Reset box activation to the defaults.
         for n, b in self.map["boxes"].items(): self._set_activation(n, b["default_activation"])
         # Collect activation for trigger targets and add to observation vector.
@@ -55,12 +61,13 @@ class HoloNav(gym.Env):
         # Clip x,y position within bounds.
         xy = self.obs[:2]
         xy_new = np.clip(xy + action*self.map["max_speed"], [0,0], self.map["shape"])
-        # If intersect a wall, reset position (and possibly get reward).
-        rewards = {}
+        # If intersect a wall, reset position and get reward and continuation prob.
+        rewards, p_c = {}, 1
         if "walls" in self.map:
             for n, w in self.map["walls"].items():
                 if do_intersect(xy, xy_new, w["coords"][0], w["coords"][1]):
                     if "reward" in w: rewards[n] = w["reward"]
+                    if "continuation_prob" in w: p_c *= w["continuation_prob"] # Multiplicative. 
                     xy_new = xy
                     break
         # Get reward from attractors.
@@ -71,15 +78,13 @@ class HoloNav(gym.Env):
             for n, l in self.map["line_attractors"].items():
                 rewards[n] = l["reward"] * pt_to_line_dist(xy_new, l["coords"])
         # Get reward and termination probability from boxes.
-        p_c = 1
         if "boxes" in self.map:
             for n, b in self.map["boxes"].items():
-                if np.all(xy_new - b["coords"][0] >= [0,0]) and np.all(xy_new - b["coords"][1] <= [0,0]):
-                    if b["active"]:
-                        if "reward" in b: rewards[n] = b["reward"]
-                        if "continuation_prob" in b: p_c *= b["continuation_prob"] # Multiplicative. 
-                        if "trigger" in b:
-                            for target, active in b["trigger"]: self._set_activation(target, active)
+                if pt_in_box(xy_new, b["coords"]) and b["active"]:
+                    if "reward" in b: rewards[n] = b["reward"]
+                    if "continuation_prob" in b: p_c *= b["continuation_prob"]  
+                    if "trigger" in b:
+                        for target, active in b["trigger"]: self._set_activation(target, active)
         done = np.random.rand() >= p_c
         if "curiosity" in self.map: 
             # Get reward from curiosity.
@@ -87,7 +92,6 @@ class HoloNav(gym.Env):
                 np.linalg.norm(xy_new - np.mean(self.xy_hist, axis=0)) / self.max_curiosity_dist)))
             self.xy_hist.append(xy_new.copy())
             if len(self.xy_hist) > self.map["curiosity"]["num"]: self.xy_hist.pop(0)   
-        # print(rewards)
         # Update observation.
         self.obs[:2] = xy_new
         for i, target in enumerate(self.trigger_targets): self.obs[2+i] = self.map["boxes"][target]["active"]
@@ -203,7 +207,7 @@ def is_point_in_closed_segment(a, b, c):
     return a[0] == c[0] and a[1] == c[1]
 
 def do_intersect(a, b, c, d):
-    """Checks if line segments [a, b], [c, d] intersect."""
+    """Check if line segments [a, b], [c, d] intersect."""
     s1 = side(a,b,c)
     s2 = side(a,b,d)
     # All points are colinear
@@ -224,3 +228,7 @@ def do_intersect(a, b, c, d):
 def pt_to_line_dist(pt, ln):
     """Distance from a point to a line."""
     return np.linalg.norm(np.cross(ln[1]-ln[0], ln[0]-pt))/np.linalg.norm(ln[1]-ln[0])
+
+def pt_in_box(pt, bx):
+    """Check if a point lies inside a box."""
+    return np.all(pt - bx[0] >= [0,0]) and np.all(pt - bx[1] <= [0,0]) 
