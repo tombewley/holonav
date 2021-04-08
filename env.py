@@ -52,46 +52,45 @@ class HoloNav(gym.Env):
         for target in self.trigger_targets: self.obs.append(float(self.map["boxes"][target]["active"]))
         self.obs = np.array(self.obs)
         # Initialise x,y position history for curiosity if applicable.
-        if "curiosity" in self.map: self.xy_hist = [self.obs[:2].copy()]         
+        # if "curiosity" in self.map: self.xy_hist = [self.obs[:2].copy()]        
         return self.obs
 
     def step(self, action):
         assert action in self.action_space, f"Invalid action (space = {self.action_space})"
         if not self.continuous: action = self.action_mapping[action]
-        # Clip x,y position within bounds.
-        xy = self.obs[:2]
-        xy_new = np.clip(xy + action*self.map["max_speed"], [0,0], self.map["shape"])
-        # If intersect a wall, reset position and get reward and continuation prob.
-        rewards, p_c = {}, 1
-        if not np.all(np.isclose(xy, xy_new)) and "walls" in self.map:
-            for n, w in self.map["walls"].items():
-                if do_intersect(xy, xy_new, w["coords"][0], w["coords"][1]):
-                    if "reward" in w: rewards[n] = w["reward"]
-                    if "continuation_prob" in w: p_c *= w["continuation_prob"] # Multiplicative. 
-                    xy_new = xy
-                    break
+        # NOTE: Reward is based on current state only.
+        xy, rewards, p_c = self.obs[:2], {}, 1
         # Get reward from attractors.
         if "point_attractors" in self.map:
             for n, p in self.map["point_attractors"].items():
-                rewards[n] = p["reward"] * np.linalg.norm(xy_new - p["coords"])
+                rewards[n] = p["reward"] * np.linalg.norm(xy - p["coords"])
         if "line_attractors" in self.map:
             for n, l in self.map["line_attractors"].items():
-                rewards[n] = l["reward"] * pt_to_line_dist(xy_new, l["coords"])
-        # Get reward and termination probability from boxes.
+                rewards[n] = l["reward"] * pt_to_line_dist(xy, l["coords"])
+        # Get reward and continuation probability from boxes.
         if "boxes" in self.map:
             for n, b in self.map["boxes"].items():
-                if pt_in_box(xy_new, b["coords"]) and b["active"]:
+                if pt_in_box(xy, b["coords"]) and b["active"]:
                     if "reward" in b: rewards[n] = b["reward"]
                     if "continuation_prob" in b: p_c *= b["continuation_prob"]  
                     if "trigger" in b:
                         for target, active in b["trigger"]: self._set_activation(target, active)
+        # Terminate according to continuation probability.
         done = np.random.rand() >= p_c
-        if "curiosity" in self.map: 
-            # Get reward from curiosity.
-            rewards["curiosity"] = float(self.map["curiosity"]["reward"] * (1. - ( \
-                np.linalg.norm(xy_new - np.mean(self.xy_hist, axis=0)) / self.max_curiosity_dist)))
-            self.xy_hist.append(xy_new.copy())
-            if len(self.xy_hist) > self.map["curiosity"]["num"]: self.xy_hist.pop(0)   
+        # Update x,y position, clipping within bounds.
+        xy_new = np.clip(xy + action*self.map["max_speed"], [0,0], self.map["shape"])
+        # If intersect a wall, reset position.
+        if not np.all(np.isclose(xy, xy_new)) and "walls" in self.map:
+            for n, w in self.map["walls"].items():
+                if do_intersect(xy, xy_new, w["coords"][0], w["coords"][1]): xy_new = xy; break
+                    # if "reward" in w: rewards[n] = w["reward"] NOTE: Not a function of state only.
+                    # if "continuation_prob" in w: p_c *= w["continuation_prob"] # Multiplicative. 
+        # if "curiosity" in self.map: NOTE: Non-Markovian.
+        #     # Get reward from curiosity.
+        #     rewards["curiosity"] = float(self.map["curiosity"]["reward"] * (1. - ( \
+        #         np.linalg.norm(xy_new - np.mean(self.xy_hist, axis=0)) / self.max_curiosity_dist)))
+        #     self.xy_hist.append(xy_new.copy())
+        #     if len(self.xy_hist) > self.map["curiosity"]["num"]: self.xy_hist.pop(0)   
         # Update observation.
         self.obs[:2] = xy_new
         for i, target in enumerate(self.trigger_targets): self.obs[2+i] = self.map["boxes"][target]["active"]
