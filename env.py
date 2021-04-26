@@ -128,7 +128,7 @@ class HoloNav(gym.Env):
         if self.continuous: self.action_space = gym.spaces.Box(-1, 1, shape=(2,)) 
         else: 
             self.action_space = gym.spaces.Discrete(5) 
-            # Noop, left, right, up, down.
+            # Noop, left, right, down, up.
             self.action_mapping = (np.array([0.,0.]), np.array([-1.,0.]), np.array([1.,0.]), np.array([0.,-1.]), np.array([0.,1.]))
         # Probability distribution for initialisation box.
         w = np.array([(b["init_weight"] if "init_weight" in b else 0) for b in self.map["boxes"].values()])
