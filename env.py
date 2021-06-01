@@ -19,13 +19,10 @@ class HoloNav(gym.Env):
         # Load map.
         if type(map) == str: 
             if ".yaml" not in map: # For an inbuilt map.
-                from .maps import m
-                self._build_map(m[map])
+                from .maps import m; self._build_map(m[map])
             else: # For a map in a YAML file (relative path from working directory).
-                with open(f"{map}", "r") as f:
-                    self._build_map(yaml.load(f))
-        elif type(map) == dict: # For a map already in dictionary format.
-           self._build_map(map)
+                with open(f"{map}", "r") as f: self._build_map(yaml.load(f))
+        elif type(map) == dict: self._build_map(map) # For a map already in dictionary format.
         # Set up rendering.
         self.render_mode = render_mode
         if self.render_mode: 
@@ -56,6 +53,7 @@ class HoloNav(gym.Env):
         return self.obs
 
     def step(self, action):
+        if self.continuous: action *= self.map["max_speed"]
         assert action in self.action_space, f"Invalid action (space = {self.action_space})"
         if not self.continuous: action = self.action_mapping[action]
         # NOTE: Reward is based on current state only.
@@ -78,7 +76,7 @@ class HoloNav(gym.Env):
         # Terminate according to continuation probability.
         done = np.random.rand() >= p_c
         # Update x,y position, clipping within bounds.
-        xy_new = np.clip(xy + action*self.map["max_speed"], [0,0], self.map["shape"])
+        xy_new = np.clip(xy + action, [0,0], self.map["shape"])
         # If intersect a wall, reset position.
         if not np.all(np.isclose(xy, xy_new)) and "walls" in self.map:
             for n, w in self.map["walls"].items():
@@ -108,8 +106,8 @@ class HoloNav(gym.Env):
         
     # ===================================================================
 
-    def _build_map(self, map_dict): 
-        self.map = map_dict; self.map_elements = {}        
+    def _build_map(self, map): 
+        self.map = map; self.map_elements = {}        
         # Convert coords to NumPy arrays and prevent illegal name repetition.
         for typ in {"boxes","walls","point_attractors","line_attractors"}:
             if typ in self.map:
@@ -125,11 +123,12 @@ class HoloNav(gym.Env):
             low=np.float32([0,0]+[0 for _ in self.trigger_targets]), 
             high=np.float32(self.map["shape"]+[1 for _ in self.trigger_targets])
             )
-        if self.continuous: self.action_space = gym.spaces.Box(-1, 1, shape=(2,)) 
+        ms = self.map["max_speed"]
+        if self.continuous: self.action_space = gym.spaces.Box(-ms, ms, shape=(2,)) 
         else: 
             self.action_space = gym.spaces.Discrete(5) 
             # Noop, left, right, down, up.
-            self.action_mapping = (np.array([0.,0.]), np.array([-1.,0.]), np.array([1.,0.]), np.array([0.,-1.]), np.array([0.,1.]))
+            self.action_mapping = (np.array([0.,0.]), np.array([-ms,0.]), np.array([ms,0.]), np.array([0.,-ms]), np.array([0.,ms]))
         # Probability distribution for initialisation box.
         w = np.array([(b["init_weight"] if "init_weight" in b else 0) for b in self.map["boxes"].values()])
         s = w.sum()
@@ -138,7 +137,7 @@ class HoloNav(gym.Env):
         if "curiosity" in self.map: 
             self.map["curiosity"]["reward"] = float(self.map["curiosity"]["reward"])
             # Maximium travel distance for curiosity reward.
-            self.max_curiosity_dist = self.map["max_speed"] * (self.map["curiosity"]["num"]+1) / 2
+            self.max_curiosity_dist = ms * (self.map["curiosity"]["num"]+1) / 2
 
     def _render_map(self):
         self.fig, self.ax = plt.subplots(figsize=(2,2))
