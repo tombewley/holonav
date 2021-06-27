@@ -1,0 +1,31 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "boxes": {
+        "init": {
+            "coords": [[0,1],[0,1]],
+            "init_weight": 1,
+            "face_colour": [0.9,0.9,0.9]
+        },
+        "goal": {
+            "coords": [[8,7],[10,10]],
+            "reward": 100,
+            "continuation_prob": 0,
+            "face_colour": "g"
+        },
+        "lava": {
+            "coords": [[8,3],[10,7]],
+            "reward": -100,
+            "continuation_prob": 0,
+            "face_colour": "r"
+        },
+    },
+    "walls": {
+        "1": {
+            "coords": [[5,7],[10,7]],
+        },
+        "2": {
+            "coords": [[0,3],[5,3]],
+        },
+    }
+}

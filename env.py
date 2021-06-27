@@ -125,7 +125,7 @@ class HoloNav(gym.Env):
             high=np.float32(self.map["shape"]+[1 for _ in self.trigger_targets])
             )
         ms = self.map["max_speed"]
-        if self.continuous: self.action_space = gym.spaces.Box(-ms, ms, shape=(2,)) 
+        if self.continuous: self.action_space = gym.spaces.Box(-1, 1, shape=(2,)) 
         else: 
             self.action_space = gym.spaces.Discrete(5) 
             # Noop, left, right, down, up.
