@@ -11,13 +11,13 @@
             "init_weight": 1,
         },
         "goal": {
-            "coords": [[8,7],[10,10]],
+            "coords": [[8,8],[10,10]],
             "reward": 100,
             "continuation_prob": 0,
             "face_colour": "g"
         },
         "lava": {
-            "coords": [[8,3],[10,7]],
+            "coords": [[8,6],[10,8]],
             "reward": -100,
             "continuation_prob": 0,
             "face_colour": "r"
@@ -25,17 +25,17 @@
     },
     "walls": {
         "1": {
-            "coords": [[5,7],[10,7]],
+            "coords": [[2,8],[10,8]],
         },
         "2": {
-            "coords": [[0,3],[5,3]],
+            "coords": [[0,4],[8,4]],
         },
     },
-    # "point_attractors": {
-    #     "dist_to_goal": {
-    #         "coords": [9,9],
-    #         "reward": -0.1,
-    #         "colour": "w"
-    #     }
-    # },
+    "point_attractors": {
+        "dist_to_goal": {
+            "coords": [9,9],
+            "reward": -0.1,
+            "colour": "w"
+        }
+    },
 }
