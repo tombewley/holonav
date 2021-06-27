@@ -1,12 +1,13 @@
 import gym
+import os
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-def _register(*args, **kwargs):
-    """Used to properly register env with Gym."""
-    return gym.envs.registration.EnvSpec("HoloNav-v0", HoloNav).make(**kwargs)
+# def _register(*args, **kwargs):
+#     """Used to properly register env with Gym."""
+#     return gym.envs.registration.EnvSpec("HoloNav-v0", HoloNav).make(**kwargs)
 
 class HoloNav(gym.Env):
     """
@@ -18,10 +19,10 @@ class HoloNav(gym.Env):
         self.continuous = continuous
         # Load map.
         if type(map) == str: 
-            if ".yaml" not in map: # For an inbuilt map.
-                from .maps import m; self._build_map(m[map])
-            else: # For a map in a YAML file (relative path from working directory).
-                with open(f"{map}", "r") as f: self._build_map(yaml.load(f))
+            if ".yaml" not in map: # For an inbuilt map (no file extension).
+                path = os.path.join(os.path.dirname(__file__), f"maps/{map}.yaml")
+            else: path = map# For a map in a YAML file (relative path from working directory).
+            with open(path, "r") as f: self._build_map(yaml.load(f))
         elif type(map) == dict: self._build_map(map) # For a map already in dictionary format.
         # Set up rendering.
         self.render_mode = render_mode
@@ -140,8 +141,9 @@ class HoloNav(gym.Env):
             self.max_curiosity_dist = ms * (self.map["curiosity"]["num"]+1) / 2
 
     def _render_map(self):
-        self.fig, self.ax = plt.subplots(figsize=(2,2))
-        self.ax.set_xticks([]); self.ax.set_yticks([]); plt.tight_layout(); plt.ion()
+        try: self.ax
+        except: self.fig, self.ax = plt.subplots(figsize=(2,2))
+        self.ax.set_xticks([]); self.ax.set_yticks([]); plt.ion(); # plt.tight_layout()
         if "boxes" in self.map:
             for n, b in self.map["boxes"].items():
                 self.map_elements[n] = Rectangle(

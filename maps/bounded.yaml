@@ -1,0 +1,35 @@
+{
+    "shape": [10,10],
+    "max_speed": .5,
+    "boxes": {
+        "init": {
+            "coords": [[2,2],[8,8]],
+            "init_weight": 1,
+            "edge_colour": "gray"
+        },
+        "left bound": {
+            "coords": [[0,0],[1,10]],
+            "reward": -1,
+            "continuation_prob": 0,
+            "face_colour": "k"
+        },
+        "right bound": {
+            "coords": [[9,0],[10,10]],
+            "reward": -1,
+            "continuation_prob": 0,
+            "face_colour": "k"
+        },
+        "bottom bound": {
+            "coords": [[1,0],[9,1]],
+            "reward": -1,
+            "continuation_prob": 0,
+            "face_colour": "k"
+        },
+        "top bound": {
+            "coords": [[1,9],[9,10]],
+            "reward": -1,
+            "continuation_prob": 0,
+            "face_colour": "k"
+        }
+    }
+}

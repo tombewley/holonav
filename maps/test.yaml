@@ -1,0 +1,39 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "boxes": {
+        "init": {
+            "coords": [[0,0],[6,10]],
+            "init_weight": 1,
+            "edge_colour": "gray"
+        },
+        "goal": {
+            "coords": [[8,8],[10,10]],
+            "reward": 100,
+            "continuation_prob": 0,
+            "face_colour": "g"
+        },
+    },
+    "walls": {
+        "v": {
+            "coords": [[5,2],[5,8]],
+        },
+        "h": {
+            "coords": [[2,5],[8,5]],
+        }
+    },
+    "point_attractors": {
+        "dist_to_goal": {
+            "coords": [9,9],
+            "reward": -0.1,
+            "colour": "#fe5d02"
+        }
+    },
+    "line_attractors": {
+        "dist_to_line": {
+            "coords": [[0,0],[10,10]],
+            "reward": -0.1,
+            "colour": "#fe5d02"
+        }
+    }
+}

@@ -1,1 +1,6 @@
-from .env import _register as env
+from gym.envs.registration import register
+
+register(
+    id="HoloNav-v0", 
+    entry_point="holonav.env:HoloNav",
+	)

@@ -1,0 +1,21 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "boxes": {
+        "init": {
+            "coords": [[0,0],[10,10]],
+            "init_weight": 1,
+        },
+        "goal": {
+            "coords": [[8,8],[10,10]],
+            "reward": 100.0,
+            "continuation_prob": 0,
+            "face_colour": "g"
+        },
+    },
+    "walls": {
+        "1": {
+            "coords": [[3,5],[10,5]],
+        },
+    },
+}

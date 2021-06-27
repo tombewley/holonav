@@ -1,0 +1,50 @@
+{
+    "shape": [12,12],
+    "max_speed": .25,
+    "boxes": {
+        "init": {
+            "coords": [[1,1],[11,11]],
+            "init_weight": 1,
+            # "face_colour": "lightgray"
+        },
+        "goal": {
+            "coords": [[8,8],[11,11]],
+            "reward": 100,
+            "init_weight": 0,
+            "continuation_prob": 0,
+            "face_colour": "g"
+        },
+    },
+    "walls": {
+        "1": {
+            "coords": [[4,8],[11,8]],
+            "continuation_prob": 0,
+            "reward": -10,
+        },
+        "2": {
+            "coords": [[1,4],[8,4]],
+            "continuation_prob": 0,
+            "reward": -10,
+        },
+        "l": {
+            "coords": [[1,0],[1,12]],
+            "continuation_prob": 0,
+            "reward": -10,
+        },
+        "r": {
+            "coords": [[11,0],[11,12]],
+            "continuation_prob": 0,
+            "reward": -10,
+        },
+        "b": {
+            "coords": [[0,1],[12,1]],
+            "continuation_prob": 0,
+            "reward": -10,
+        },
+        "t": {
+            "coords": [[0,11],[12,11]],
+            "continuation_prob": 0,
+            "reward": -10,
+        },
+    },
+}

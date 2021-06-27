@@ -1,0 +1,39 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "curiosity": {
+        "num": 10,
+        "reward": -.005 
+    },
+    "boxes": {
+        "everywhere": {
+            "coords": [[0,0],[10,10]],
+            "init_weight": 1,
+        },
+        "red": {
+            "coords": [[0,3],[5,7]],
+            "reward": 1,
+            "continuation_prob": 0,
+            "face_colour": "r",
+            "default_activation": False,
+        },
+        "green": {
+            "coords": [[5,7],[10,10]],
+            "reward": 1,
+            "face_colour": "g",
+            "default_activation": False,
+            "trigger": [["red", True],["green", False]]
+        },
+        "blue": {
+            "coords": [[5,0],[10,3]],
+            "reward": 1,
+            "face_colour": "b",
+            "trigger": [["green", True],["blue", False]]
+        }
+    },
+    "walls": {
+            "wall": {
+                "coords": [[5,6],[5,8]],
+            },
+    },
+}

@@ -1,0 +1,20 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "boxes": {
+        "left": {
+            "coords": [[0,0],[5,10]],
+            "init_weight": 1,
+            "reward": -1,
+            "face_colour": "#f5b36c"
+        },
+    },
+    "walls": {
+        "t": {
+            "coords": [[5,5.5],[5,10]],
+        },
+        "b": {
+            "coords": [[5,0],[5,4.5]],
+        },
+    },
+}
