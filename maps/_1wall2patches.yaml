@@ -1,0 +1,27 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "boxes": {
+        "init": {
+            # "coords": [[4.5,2],[5.5,3]],
+            "coords": [[0,0],[10,10]],
+            "init_weight": 1.0,
+            # "face_colour": "gray"
+        },
+        "good": {
+            "coords": [[8,5],[10,10]],
+            "reward": 1.0,
+            "face_colour": "g"
+        },
+        "bad": {
+            "coords": [[8,0],[10,5]],
+            "reward": -1.0,
+            "face_colour": "r"
+        }
+    },
+    "walls": {
+        "1": {
+            "coords": [[3,5],[10,5]],
+        },
+    },
+}

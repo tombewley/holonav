@@ -13,12 +13,12 @@
             "continuation_prob": 0,
             "face_colour": "g"
         },
-        "lava": {
-            "coords": [[8,3],[10,7]],
-            "reward": -100,
-            "continuation_prob": 0,
-            "face_colour": "r"
-        },
+        # "lava": {
+        #     "coords": [[8,3],[10,7]],
+        #     "reward": -100,
+        #     "continuation_prob": 0,
+        #     "face_colour": "r"
+        # },
     },
     "walls": {
         "1": {

@@ -5,10 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-# def _register(*args, **kwargs):
-#     """Used to properly register env with Gym."""
-#     return gym.envs.registration.EnvSpec("HoloNav-v0", HoloNav).make(**kwargs)
-
 class HoloNav(gym.Env):
     """
     2D holonomic navigation task with either continuous or discrete actions.
@@ -21,7 +17,7 @@ class HoloNav(gym.Env):
         if type(map) == str: 
             if ".yaml" not in map: # For an inbuilt map (no file extension).
                 path = os.path.join(os.path.dirname(__file__), f"maps/{map}.yaml")
-            else: path = map# For a map in a YAML file (relative path from working directory).
+            else: path = map # For a map in a YAML file (relative path from working directory).
             with open(path, "r") as f: self._build_map(yaml.load(f))
         elif type(map) == dict: self._build_map(map) # For a map already in dictionary format.
         # Set up rendering.
@@ -29,7 +25,7 @@ class HoloNav(gym.Env):
         if self.render_mode: 
             assert self.render_mode in self.metadata["render.modes"]
             if self.render_mode == "rgb_array": plt.switch_backend("agg")
-            self._render_map()
+            self.render_map()
         else: self.ax = None
         self.obs = None
 
@@ -49,7 +45,7 @@ class HoloNav(gym.Env):
         # Collect activation for trigger targets and add to observation vector.
         for target in self.trigger_targets: self.obs.append(float(self.map["boxes"][target]["active"]))
         self.obs = np.array(self.obs)
-        # Initialise x,y position history for curiosity if applicable.
+        # Initialise x,y position history for curiosity if applicable. NOTE: Non-Markovian.
         # if "curiosity" in self.map: self.xy_hist = [self.obs[:2].copy()]        
         return self.obs
 
@@ -57,8 +53,37 @@ class HoloNav(gym.Env):
         if self.continuous: action *= self.map["max_speed"]
         assert action in self.action_space, f"Invalid action (space = {self.action_space})"
         if not self.continuous: action = self.action_mapping[action]
-        # NOTE: Reward is based on current state only.
-        xy, rewards, p_c = self.obs[:2], {}, 1
+        xy = self.obs[:2]
+        # Calculate reward.
+        reward, reward_components, p_continue = self.R(xy)
+        # Update x,y position, clipping within bounds.
+        xy_new = np.clip(xy + action, [0,0], self.map["shape"])
+        # If intersect a wall, reset position.
+        if not np.all(np.isclose(xy, xy_new)) and "walls" in self.map:
+            for n, w in self.map["walls"].items():
+                if do_intersect(xy, xy_new, w["coords"][0], w["coords"][1]): xy_new = xy; break
+                    # if "reward" in w: rewards[n] = w["reward"] NOTE: Not a function of state only.
+                    # if "continuation_prob" in w: p_continue *= w["continuation_prob"] # Multiplicative. 
+        # if "curiosity" in self.map: NOTE: Non-Markovian.
+        #     # Get reward from curiosity.
+        #     rewards["curiosity"] = float(self.map["curiosity"]["reward"] * (1. - ( \
+        #         np.linalg.norm(xy_new - np.mean(self.xy_hist, axis=0)) / self.max_curiosity_dist)))
+        #     self.xy_hist.append(xy_new.copy())
+        #     if len(self.xy_hist) > self.map["curiosity"]["num"]: self.xy_hist.pop(0)   
+        # Update observation.
+        self.obs[:2] = xy_new
+        # Terminate according to continuation probability.
+        done = np.random.rand() >= p_continue
+        # Update activations.
+        for i, target in enumerate(self.trigger_targets): self.obs[2+i] = self.map["boxes"][target]["active"]
+        return self.obs, reward, done, reward_components 
+
+    def R(self, xy):
+        """
+        Reward function.
+        NOTE: Reward is based on current state only.
+        """
+        rewards, p_continue = {}, 1
         # Get reward from attractors.
         if "point_attractors" in self.map:
             for n, p in self.map["point_attractors"].items():
@@ -71,29 +96,11 @@ class HoloNav(gym.Env):
             for n, b in self.map["boxes"].items():
                 if pt_in_box(xy, b["coords"]) and b["active"]:
                     if "reward" in b: rewards[n] = b["reward"]
-                    if "continuation_prob" in b: p_c *= b["continuation_prob"]  
+                    if "continuation_prob" in b: p_continue *= b["continuation_prob"]  
                     if "trigger" in b:
+                        raise NotImplementedError("TODO: Rethink implementation of this feature.")
                         for target, active in b["trigger"]: self._set_activation(target, active)
-        # Terminate according to continuation probability.
-        done = np.random.rand() >= p_c
-        # Update x,y position, clipping within bounds.
-        xy_new = np.clip(xy + action, [0,0], self.map["shape"])
-        # If intersect a wall, reset position.
-        if not np.all(np.isclose(xy, xy_new)) and "walls" in self.map:
-            for n, w in self.map["walls"].items():
-                if do_intersect(xy, xy_new, w["coords"][0], w["coords"][1]): xy_new = xy; break
-                    # if "reward" in w: rewards[n] = w["reward"] NOTE: Not a function of state only.
-                    # if "continuation_prob" in w: p_c *= w["continuation_prob"] # Multiplicative. 
-        # if "curiosity" in self.map: NOTE: Non-Markovian.
-        #     # Get reward from curiosity.
-        #     rewards["curiosity"] = float(self.map["curiosity"]["reward"] * (1. - ( \
-        #         np.linalg.norm(xy_new - np.mean(self.xy_hist, axis=0)) / self.max_curiosity_dist)))
-        #     self.xy_hist.append(xy_new.copy())
-        #     if len(self.xy_hist) > self.map["curiosity"]["num"]: self.xy_hist.pop(0)   
-        # Update observation.
-        self.obs[:2] = xy_new
-        for i, target in enumerate(self.trigger_targets): self.obs[2+i] = self.map["boxes"][target]["active"]
-        return self.obs, sum(rewards.values()), done, {"reward_components": rewards}
+        return sum(rewards.values()), {"reward_components": rewards}, p_continue
 
     def render(self, mode="human", pause=1e-3): 
         assert mode == self.render_mode, f"Render mode is {self.render_mode}, so cannot use {mode}"
@@ -140,7 +147,7 @@ class HoloNav(gym.Env):
             # Maximium travel distance for curiosity reward.
             self.max_curiosity_dist = ms * (self.map["curiosity"]["num"]+1) / 2
 
-    def _render_map(self):
+    def render_map(self):
         try: self.ax
         except: self.fig, self.ax = plt.subplots(figsize=(2,2))
         self.ax.set_xticks([]); self.ax.set_yticks([]); plt.ion(); # plt.tight_layout()
