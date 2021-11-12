@@ -1,0 +1,20 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "boxes": {
+        "init": {
+            "coords": [[0,0],[10,10]],
+            "init_weight": 1,
+        },
+        "bad": {
+            "coords": [[5,0],[10,4.999]], # NOTE: To ensure no overlap.
+            "reward": -1.0,
+            "face_colour": "r"
+        },
+        "good": {
+            "coords": [[5,5],[10,10]],
+            "reward": 1.0,
+            "face_colour": "g"
+        }
+    }
+}

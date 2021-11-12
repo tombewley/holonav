@@ -1,0 +1,36 @@
+{
+    "shape": [10,10],
+    "max_speed": .25,
+    "boxes": {
+        "init": {
+            "coords": [[0,0],[10,10]],
+            "init_weight": 1,
+        },
+        "good": {
+            "coords": [[8,8],[10,10]],
+            "reward": 1.0,
+            "face_colour": "g"
+        },
+        # "partial": {
+        #     "coords": [[0,8],[8,10]],
+        #     "reward": 0.5,
+        #     "face_colour": "#bfedb7"
+        # },
+        "bad": {
+            "coords": [[0,0],[10,3]],
+            "reward": -1.0,
+            # "init_weight": 1,
+            "face_colour": "r"
+        }
+    },
+    "walls": {
+        "wall_upper": {
+            "coords": [[4,6],[10,6]],
+            # "reward": -1.0
+        },
+        "wall_lower": {
+            "coords": [[0,3],[6,3]],
+            # "reward": -1.0
+        }
+    }
+}
