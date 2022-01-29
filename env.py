@@ -5,6 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+
+DISCRETE_ACTION_MAP = np.array([
+    [ 0., 0.], # 0: no-op
+    [-1., 0.], # 1: left
+    [ 1., 0.], # 2: right
+    [ 0.,-1.], # 3: down
+    [ 0., 1.]  # 4: up
+]) 
+
 class HoloNav(gym.Env):
     """
     2D holonomic navigation task with either continuous or discrete actions.
@@ -18,7 +27,7 @@ class HoloNav(gym.Env):
             if ".yaml" not in map: # For an inbuilt map (no file extension).
                 path = os.path.join(os.path.dirname(__file__), f"maps/{map}.yaml")
             else: path = map # For a map in a YAML file (relative path from working directory).
-            with open(path, "r") as f: self._build_map(yaml.load(f))
+            with open(path, "r") as f: self._build_map(yaml.load(f, Loader=yaml.FullLoader))
         elif type(map) == dict: self._build_map(map) # For a map already in dictionary format.
         # Set up rendering.
         self.render_mode = render_mode
@@ -52,7 +61,7 @@ class HoloNav(gym.Env):
         # With epsilon action noise, have a nonzero probability of resampling a random action.
         if self.action_noise[0] == "epsilon" and self.action_noise[1] > 0 and np.random.rand() < self.action_noise[1]: 
             action = self.action_space.sample()
-        if not self.continuous: action = self.action_mapping[action].copy()
+        if not self.continuous: action = DISCRETE_ACTION_MAP[action].copy()
         # With Gaussian action noise, a noise vector is added to the *unscaled* action vector.
         # NOTE: This currently means max_speed can be exceeded.
         if self.action_noise[0] == "gaussian": 
@@ -124,6 +133,7 @@ class HoloNav(gym.Env):
                     assert n not in self.map_elements, f"Repeated map element name: {n}"
                     self.map_elements[n] = None # Gets replaced with matplotlib element if self.render_mode != False.
                     x["coords"] = np.array(x["coords"])
+                    assert (x["coords"] >= 0).all() and (x["coords"] <= self.map["shape"]).all(), f"Out-of-bounds element: {n}"
                     if typ == "boxes" and "default_activation" not in x: x["default_activation"] = True
         # Check for trigger targets, which add boolean dimensions to the observation space. List them in alphanumeric order.
         self.trigger_targets = sorted(list({t[0] for b in self.map["boxes"].values() if "trigger" in b for t in b["trigger"]}))
@@ -133,9 +143,7 @@ class HoloNav(gym.Env):
             high=np.float32(self.map["shape"]+[1. for _ in self.trigger_targets])
             )
         if self.continuous: self.action_space = gym.spaces.Box(np.float32(-1.), np.float32(1.), shape=(2,)) 
-        else: 
-            self.action_space = gym.spaces.Discrete(5) 
-            self.action_mapping = np.array([[0.,0.],[-1.,0.],[1.,0.],[0.,-1.],[0.,1.]]) # Noop, left, right, down, up.
+        else: self.action_space = gym.spaces.Discrete(5) 
         # Probability distribution for initialisation box.
         w = np.array([(b["init_weight"] if "init_weight" in b else 0) for b in self.map["boxes"].values()])
         s = w.sum()
@@ -144,8 +152,11 @@ class HoloNav(gym.Env):
 
     def render_map(self):
         try: self.ax
-        except: self.fig, self.ax = plt.subplots(figsize=(2,2))
-        self.ax.set_xticks([]); self.ax.set_yticks([]); plt.ion(); # plt.tight_layout()
+        except: 
+            S = 2
+            ratio = self.map["shape"][1] / self.map["shape"][0]
+            self.fig, self.ax = plt.subplots(figsize=(S, ratio * S) if ratio > 1 else (S / ratio, S))
+        self.ax.set_xticks([]); self.ax.set_yticks([]); plt.ion(); self.ax.set_aspect("equal", "box")
         if "boxes" in self.map:
             for n, b in self.map["boxes"].items():
                 self.map_elements[n] = Rectangle(
