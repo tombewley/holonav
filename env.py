@@ -25,7 +25,7 @@ class HoloNav(gym.Env):
         # Load map.
         if type(map) == str: 
             if ".yaml" not in map: # For an inbuilt map (no file extension).
-                path = os.path.join(os.path.dirname(__file__), f"maps/{map}.yaml")
+                path = os.path.join(os.path.dirname(__file__), "maps", f"{map}.yaml")
             else: path = map # For a map in a YAML file (relative path from working directory).
             with open(path, "r") as f: self._build_map(yaml.load(f, Loader=yaml.FullLoader))
         elif type(map) == dict: self._build_map(map) # For a map already in dictionary format.
