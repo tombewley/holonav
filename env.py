@@ -100,7 +100,6 @@ class HoloNav(gym.Env):
                     if "reward" in b: reward_components.append(b["reward"])
                     if "continuation_prob" in b: p_continue *= b["continuation_prob"]  
                     if "trigger" in b:
-                        raise NotImplementedError("TODO: Rethink implementation of this feature.")
                         for target, active in b["trigger"]: self._set_activation(target, active)
                 elif "reward" in b: reward_components.append(0.)
         # Get reward from walls.
