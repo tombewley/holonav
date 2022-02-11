@@ -54,7 +54,7 @@ class HoloNav(gym.Env):
         # Collect activation for trigger targets and add to observation vector.
         for target in self.trigger_targets: self.obs.append(float(self.map["boxes"][target]["active"]))
         self.obs = np.array(self.obs)
-        return self.obs
+        return self.obs.copy()
 
     def step(self, action):
         assert action in self.action_space, f"Invalid action (space = {self.action_space})"
@@ -78,7 +78,7 @@ class HoloNav(gym.Env):
         done = np.random.rand() >= p_continue
         # Update activations.
         for i, target in enumerate(self.trigger_targets): self.obs[2+i] = self.map["boxes"][target]["active"]
-        return self.obs, reward, done, reward_components 
+        return self.obs.copy(), reward, done, reward_components 
 
     def reward(self, xy, xy_new):
         """
