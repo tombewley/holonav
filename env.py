@@ -37,14 +37,17 @@ class HoloNav(gym.Env):
             self.render_map()
         else: self.ax = None
         self.obs = None
+        self.seed()
+
+    def seed(self, seed=None): self.rng = np.random.default_rng(seed)
 
     def reset(self): 
         ok = False
         while not ok:
             # Choose a box to initialise in and sample a random uniform location inside.
-            init_box  = np.random.choice(list(self.map["boxes"].keys()), p=self._init_box_probs)
+            init_box  = self.rng.choice(list(self.map["boxes"].keys()), p=self._init_box_probs)
             xb, yb = zip(*self.map["boxes"][init_box]["coords"])
-            self.obs, ok = [np.random.uniform(*xb), np.random.uniform(*yb)], True
+            self.obs, ok = [self.rng.uniform(*xb), self.rng.uniform(*yb)], True
             # Allow boxes with init_weight = 0 to block this location.
             if "boxes" in self.map:
                 for b in self.map["boxes"].values():
@@ -59,13 +62,13 @@ class HoloNav(gym.Env):
     def step(self, action):
         assert action in self.action_space, f"Invalid action (space = {self.action_space})"
         # With epsilon action noise, have a nonzero probability of resampling a random action.
-        if self.action_noise[0] == "epsilon" and self.action_noise[1] > 0 and np.random.rand() < self.action_noise[1]: 
+        if self.action_noise[0] == "epsilon" and self.action_noise[1] > 0 and self.rng.rand() < self.action_noise[1]: 
             action = self.action_space.sample()
         if not self.continuous: action = DISCRETE_ACTION_MAP[action].copy()
         # With Gaussian action noise, a noise vector is added to the *unscaled* action vector.
         # NOTE: This currently means max_speed can be exceeded.
         if self.action_noise[0] == "gaussian": 
-            action += np.random.normal(scale=self.action_noise[1], size=action.shape)
+            action += self.rng.normal(scale=self.action_noise[1], size=action.shape)
         action *= self.map["max_speed"] # NOTE: Action scaling applied here.
         xy = self.obs[:2]
         # Update x,y position, clipping within bounds.
@@ -75,7 +78,7 @@ class HoloNav(gym.Env):
         # Update observation.
         self.obs[:2] = xy if intersect_wall else xy_new
         # Terminate according to continuation probability.
-        done = np.random.rand() >= p_continue
+        done = self.rng.random() >= p_continue
         # Update activations.
         for i, target in enumerate(self.trigger_targets): self.obs[2+i] = self.map["boxes"][target]["active"]
         return self.obs.copy(), reward, done, reward_components 
