@@ -39,7 +39,9 @@ class HoloNav(gym.Env):
         self.obs = None
         self.seed()
 
-    def seed(self, seed=None): self.rng = np.random.default_rng(seed)
+    def seed(self, seed=None): 
+        self.rng = np.random.default_rng(seed)
+        self.action_space.np_random.seed(seed)
 
     def reset(self): 
         ok = False
