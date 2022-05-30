@@ -20,7 +20,7 @@ class HoloNav(gym.Env):
     """
     metadata = {"render.modes": ["human", "rgb_array"]}
 
-    def __init__(self, map="default", continuous=True, action_noise=(None,), render_mode=False):
+    def __init__(self, map="empty", continuous=True, action_noise=(None,), render_mode=False):
         self.continuous, self.action_noise = continuous, action_noise
         # Load map.
         if type(map) == str: 

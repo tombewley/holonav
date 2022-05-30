@@ -1,0 +1,10 @@
+{
+    "shape": [1,1],
+    "max_speed": .1,
+    "boxes": {
+        "init": {
+            "coords": [[0,0],[1,1]],
+            "init_weight": 1,
+        }
+    }
+}
