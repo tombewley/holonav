@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import os
 import yaml
 import numpy as np
@@ -41,9 +41,10 @@ class HoloNav(gym.Env):
 
     def seed(self, seed):
         self.rng = np.random.default_rng(seed)
-        self.action_space.np_random.seed(seed)
+        self.action_space.seed(seed)
 
-    def reset(self):
+    def reset(self, seed: int = None, options: dict = None):
+        self.seed(seed)
         ok = False
         while not ok:
             # Choose a box to initialise in and sample a random uniform location inside.
@@ -58,8 +59,8 @@ class HoloNav(gym.Env):
         for n, b in self.map["boxes"].items(): self._set_activation(n, b["default_activation"])
         # Collect activation for trigger targets and add to observation vector.
         for target in self.trigger_targets: self.obs.append(float(self.map["boxes"][target]["active"]))
-        self.obs = np.array(self.obs)
-        return self.obs.copy()
+        self.obs = np.array(self.obs, dtype=np.float32)
+        return self.obs.copy(), {}
 
     def step(self, action):
         assert action in self.action_space, f"Invalid action (space = {self.action_space})"
@@ -80,10 +81,10 @@ class HoloNav(gym.Env):
         # Update observation.
         self.obs[:2] = xy if intersect_wall else xy_new
         # Terminate according to continuation probability.
-        done = self.rng.random() >= p_continue
+        terminated = self.rng.random() >= p_continue
         # Update activations.
         for i, target in enumerate(self.trigger_targets): self.obs[2+i] = self.map["boxes"][target]["active"]
-        return self.obs.copy(), reward, done, reward_components 
+        return self.obs.copy(), reward, terminated, False, reward_components
 
     def reward(self, xy, xy_new):
         """
@@ -164,7 +165,7 @@ class HoloNav(gym.Env):
         if "boxes" in self.map:
             for n, b in self.map["boxes"].items():
                 self.map_elements[n] = Rectangle(
-                    xy=[b["coords"][0,0], b["coords"][0,1]],
+                    xy=(b["coords"][0,0], b["coords"][0,1]),
                     width=b["coords"][1,0] - b["coords"][0,0],
                     height=b["coords"][1,1] - b["coords"][0,1],
                     facecolor=(b["face_colour"] if "face_colour" in b else "none"),
