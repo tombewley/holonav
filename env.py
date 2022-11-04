@@ -18,7 +18,7 @@ class HoloNav(gym.Env):
     """
     2D holonomic navigation task with either continuous or discrete actions.
     """
-    metadata = {"render.modes": ["human", "rgb_array"]}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
     def __init__(self, map="empty", continuous=True, action_noise=(None,), render_mode=False, seed=None):
         self.continuous, self.action_noise = continuous, action_noise
@@ -32,7 +32,7 @@ class HoloNav(gym.Env):
         # Set up rendering.
         self.render_mode = render_mode
         if self.render_mode: 
-            assert self.render_mode in self.metadata["render.modes"]
+            assert self.render_mode in self.metadata["render_modes"]
             if self.render_mode == "rgb_array": plt.switch_backend("agg")
             self.render_map()
         else: self.ax = None
@@ -118,8 +118,7 @@ class HoloNav(gym.Env):
                 elif "reward" in w: reward_components.append(0.)
         return sum(reward_components), {"reward_components": reward_components}, p_continue, intersect_wall
 
-    def render(self, mode="human", pause=1e-6):
-        assert mode == self.render_mode, f"Render mode is {self.render_mode}, so cannot use {mode}"
+    def render(self, pause=1e-6, **kwargs):
         if self.obs is not None: self._render_agent()
         if self.render_mode == "human": plt.pause(pause)
         elif self.render_mode == "rgb_array": # From https://stackoverflow.com/a/7821917.
